@@ -1,4 +1,4 @@
-const { Movie, Showtime, Branch, sequelize } = require('../models');
+const { Movie, Showtime, Branch, Room } = require('../models');
 const { Op } = require('sequelize');
 
 const getAllMovies = async (req, res, next) => {
@@ -25,12 +25,7 @@ const getAllMovies = async (req, res, next) => {
       ];
     }
 
-    // Filtro por sucursal
-    if (branchId) {
-      whereClause.branchId = branchId;
-    }
-
-    // Filtro por fecha de función
+    // Filtro por fecha de función - a través de showtimes
     if (date) {
       includeClause.push({
         model: Showtime,
@@ -43,16 +38,21 @@ const getAllMovies = async (req, res, next) => {
             ]
           }
         },
-        required: true
+        required: false // Cambiar a false para no forzar la relación
       });
     }
 
-    // Siempre incluir la relación con branch
-    includeClause.push({
-      model: Branch,
-      as: 'branch',
-      attributes: ['id', 'name', 'location']
-    });
+    // Filtro por sucursal - a través de showtimes
+    if (branchId && branchId !== 'Todas las sucursales') {
+      includeClause.push({
+        model: Showtime,
+        as: 'showtimes',
+        where: {
+          branchId: branchId
+        },
+        required: false // Cambiar a false
+      });
+    }
 
     console.log("🔍 Consulta Sequelize:", {
       where: whereClause,
@@ -70,7 +70,7 @@ const getAllMovies = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: movies
+      data: { movies } // ← IMPORTANTE: Envolver en data según tu frontend
     });
   } catch (error) {
     console.error("❌ Error en getAllMovies:", error);
@@ -84,14 +84,18 @@ const getMovieById = async (req, res, next) => {
     const movie = await Movie.findByPk(id, {
       include: [
         {
-          model: Branch,
-          as: 'branch',
-          attributes: ['id', 'name', 'location']
-        },
-        {
           model: Showtime,
           as: 'showtimes',
-          include: ['room']
+          include: [
+            {
+              model: Room,
+              as: 'room'
+            },
+            {
+              model: Branch,
+              as: 'branch'
+            }
+          ]
         }
       ]
     });
@@ -105,40 +109,32 @@ const getMovieById = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: movie
+      data: { movie } // ← Envolver en data
     });
   } catch (error) {
     next(error);
   }
 };
 
+// ELIMINAR branchId de createMovie y updateMovie
 const createMovie = async (req, res, next) => {
   try {
     const movieData = req.body;
     
-    // Validar que branchId esté presente
-    if (!movieData.branchId) {
-      return res.status(400).json({
-        success: false,
-        message: 'branchId es requerido'
-      });
-    }
+    // REMOVER validación de branchId - Movie no tiene branchId
+    // if (!movieData.branchId) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'branchId es requerido'
+    //   });
+    // }
 
     const movie = await Movie.create(movieData);
-
-    // Cargar la relación branch para la respuesta
-    const movieWithBranch = await Movie.findByPk(movie.id, {
-      include: [{
-        model: Branch,
-        as: 'branch',
-        attributes: ['id', 'name', 'location']
-      }]
-    });
 
     res.status(201).json({
       success: true,
       message: 'Película creada exitosamente',
-      data: movieWithBranch
+      data: { movie } // ← Envolver en data
     });
   } catch (error) {
     next(error);
@@ -160,19 +156,10 @@ const updateMovie = async (req, res, next) => {
 
     await movie.update(movieData);
 
-    // Cargar la relación branch para la respuesta
-    const updatedMovie = await Movie.findByPk(id, {
-      include: [{
-        model: Branch,
-        as: 'branch',
-        attributes: ['id', 'name', 'location']
-      }]
-    });
-
     res.json({
       success: true,
       message: 'Película actualizada exitosamente',
-      data: updatedMovie
+      data: { movie } // ← Envolver en data
     });
   } catch (error) {
     next(error);
