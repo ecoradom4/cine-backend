@@ -196,7 +196,7 @@ app.use('/showtimes', showtimeRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/branches', branchRoutes);
 app.use('/seats', seatRoutes);
-app.use('/tickets', ticketRoutes);
+app.use('/tickets', ticketRoutes); 
 
 // Manejo de errores
 app.use(errorHandler);

@@ -2,7 +2,8 @@ const express = require('express');
 const {
   generateTicket,
   getQRCode,
-  validateTicket
+  validateTicket,
+  sendTicketEmail  // AGREGAR esta importación
 } = require('../controllers/ticket.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
 
@@ -10,7 +11,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /bookings/{id}/ticket:
+ * /tickets/bookings/{id}/ticket:
  *   get:
  *     summary: Descargar ticket PDF con QR
  *     tags: [Tickets]
@@ -36,7 +37,7 @@ router.get('/bookings/:id/ticket', authenticateToken, generateTicket);
 
 /**
  * @swagger
- * /bookings/{id}/qr:
+ * /tickets/bookings/{id}/qr:
  *   get:
  *     summary: Obtener solo el QR code del ticket
  *     tags: [Tickets]
@@ -54,6 +55,27 @@ router.get('/bookings/:id/ticket', authenticateToken, generateTicket);
  *         description: QR code obtenido exitosamente
  */
 router.get('/bookings/:id/qr', authenticateToken, getQRCode);
+
+/**
+ * @swagger
+ * /tickets/bookings/{id}/send-email:
+ *   post:
+ *     summary: Enviar ticket por email
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ticket enviado por email exitosamente
+ */
+router.post('/bookings/:id/send-email', authenticateToken, sendTicketEmail);
 
 /**
  * @swagger
@@ -76,28 +98,6 @@ router.get('/bookings/:id/qr', authenticateToken, getQRCode);
  *       200:
  *         description: Ticket validado exitosamente
  */
-router.post('/tickets/validate', validateTicket);
-
-
-/**
- * @swagger
- * /tickets/bookings/{id}/send-email:
- *   post:
- *     summary: Enviar ticket por email
- *     tags: [Tickets]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Ticket enviado por email exitosamente
- */
-router.post('/bookings/:id/send-email', authenticateToken, sendTicketEmail);
+router.post('/validate', validateTicket);
 
 module.exports = router;
