@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const path = require('path');
 
 // Importar rutas
 const authRoutes = require('./routes/auth.routes');
@@ -23,25 +24,29 @@ const app = express();
 
 // Configuración de rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // límite de 100 peticiones por ventana
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: {
     success: false,
     message: 'Demasiadas peticiones desde esta IP, por favor intenta más tarde.'
   }
 });
 
-// Configuración de Swagger
+// Configuración de Swagger ACTUALIZADA
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'API Sistema de Cine',
+      title: 'API Sistema de Cine - Cine Connect',
       version: '1.0.0',
-      description: 'Documentación de la API para el sistema de gestión de cine',
+      description: 'Documentación completa de la API para el sistema de gestión de cine',
       contact: {
-        name: 'Soporte API',
-        email: 'soporte@cine.com'
+        name: 'Soporte API Cine Connect',
+        email: 'soporte@cineconnect.com'
+      },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
       }
     },
     servers: [
@@ -57,7 +62,8 @@ const swaggerOptions = {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT'
+          bearerFormat: 'JWT',
+          description: 'Introduce el token JWT con el formato: Bearer {token}'
         }
       },
       schemas: {
@@ -66,36 +72,156 @@ const swaggerOptions = {
           properties: {
             id: {
               type: 'string',
-              format: 'uuid'
+              format: 'uuid',
+              description: 'ID único de la sucursal'
             },
             name: {
-              type: 'string'
+              type: 'string',
+              description: 'Nombre de la sucursal'
             },
             address: {
-              type: 'string'
+              type: 'string',
+              description: 'Dirección completa'
             },
             city: {
-              type: 'string'
+              type: 'string',
+              description: 'Ciudad donde se encuentra'
             },
             phone: {
-              type: 'string'
+              type: 'string',
+              description: 'Teléfono de contacto'
             },
             openingHours: {
-              type: 'string'
+              type: 'string',
+              description: 'Horario de atención'
             },
             status: {
               type: 'string',
-              enum: ['active', 'inactive']
+              enum: ['active', 'inactive'],
+              description: 'Estado de la sucursal'
+            }
+          }
+        },
+        Booking: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid'
+            },
+            seats: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Asientos reservados'
+            },
+            totalPrice: {
+              type: 'number',
+              description: 'Precio total de la reserva'
+            },
+            status: {
+              type: 'string',
+              enum: ['pending', 'confirmed', 'cancelled', 'expired']
+            },
+            ticketNumber: {
+              type: 'string',
+              description: 'Número único del ticket'
+            }
+          }
+        }
+      },
+      responses: {
+        UnauthorizedError: {
+          description: 'Token de acceso no válido o faltante',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: {
+                    type: 'boolean',
+                    example: false
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Token no válido o expirado'
+                  }
+                }
+              }
+            }
+          }
+        },
+        NotFoundError: {
+          description: 'Recurso no encontrado',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: {
+                    type: 'boolean',
+                    example: false
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Recurso no encontrado'
+                  }
+                }
+              }
             }
           }
         }
       }
     },
+    tags: [
+      {
+        name: 'Autenticación',
+        description: 'Endpoints para registro, login y gestión de usuarios'
+      },
+      {
+        name: 'Películas',
+        description: 'Gestión del catálogo de películas'
+      },
+      {
+        name: 'Salas',
+        description: 'Gestión de salas de cine'
+      },
+      {
+        name: 'Funciones',
+        description: 'Gestión de horarios y funciones'
+      },
+      {
+        name: 'Reservas',
+        description: 'Sistema de reservas y bookings'
+      },
+      {
+        name: 'Sucursales',
+        description: 'Gestión de sucursales del cine'
+      },
+      {
+        name: 'Asientos',
+        description: 'Sistema de selección y reserva de asientos'
+      },
+      {
+        name: 'Tickets',
+        description: 'Generación y gestión de tickets con QR'
+      },
+      {
+        name: 'Health',
+        description: 'Verificación del estado del servidor'
+      }
+    ],
     security: [{
       bearerAuth: []
     }]
   },
-  apis: ['./routes/*.js'] // Ruta donde buscará la documentación en las rutas
+  // ACTUALIZADO: Incluir todas las rutas
+  apis: [
+    './routes/*.js',
+    './routes/**/*.js',
+    './controllers/*.js'
+  ]
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -105,20 +231,17 @@ app.use(helmet());
 app.use(limiter);
 app.use(cors({
   origin: function (origin, callback) {
-    // Lista de orígenes permitidos
     const allowedOrigins = [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'http://192.168.1.31:3000',
-      process.env.FRONTEND_URL  // Para producción
-    ].filter(Boolean); // Elimina valores undefined/null
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
 
-    // En desarrollo, permite todos los orígenes o los específicos
     if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
 
-    // En producción, verifica contra la lista
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -133,8 +256,24 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Servir documentación Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Servir documentación Swagger con opciones mejoradas
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: `
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info h2 { color: #2c5aa0; }
+    .swagger-ui .btn.authorize { background-color: #2c5aa0; }
+    .swagger-ui .scheme-container { background-color: #f5f5f5; }
+  `,
+  customSiteTitle: "Cine Connect API Docs",
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+}));
 
 // Ruta de health check
 /**
@@ -153,36 +292,41 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
+ *                   example: Servidor del cine funcionando correctamente
  *                 timestamp:
  *                   type: string
+ *                   format: date-time
  */
 app.get('/health', (req, res) => {
   res.json({ 
     success: true, 
     message: 'Servidor del cine funcionando correctamente',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Ruta de inicio
+// Ruta de inicio con documentación de endpoints
 app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Bienvenido a la API de Cine Connect',
     version: '1.0.0',
+    documentation: '/api-docs',
     endpoints: {
-      docs: '/api-docs',
-      health: '/health',
       auth: '/auth',
       movies: '/movies',
-      rooms: '/rooms',
+      rooms: '/rooms', 
       showtimes: '/showtimes',
       bookings: '/bookings',
       branches: '/branches',
       seats: '/seats',
-      tickets: '/tickets'
+      tickets: '/tickets',
+      health: '/health'
     },
     timestamp: new Date().toISOString()
   });
@@ -196,7 +340,7 @@ app.use('/showtimes', showtimeRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/branches', branchRoutes);
 app.use('/seats', seatRoutes);
-app.use('/tickets', ticketRoutes); 
+app.use('/tickets', ticketRoutes);
 
 // Manejo de errores
 app.use(errorHandler);
@@ -205,7 +349,17 @@ app.use(errorHandler);
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Ruta no encontrada'
+    message: 'Ruta no encontrada',
+    availableEndpoints: {
+      docs: '/api-docs',
+      health: '/health',
+      auth: '/auth',
+      movies: '/movies',
+      bookings: '/bookings',
+      branches: '/branches', 
+      seats: '/seats',
+      tickets: '/tickets'
+    }
   });
 });
 
