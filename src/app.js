@@ -7,6 +7,8 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const path = require('path');
 
+
+
 // Importar rutas
 const authRoutes = require('./routes/auth.routes');
 const movieRoutes = require('./routes/movie.routes');
@@ -16,6 +18,7 @@ const bookingRoutes = require('./routes/booking.routes');
 const branchRoutes = require('./routes/branch.routes');
 const seatRoutes = require('./routes/seat.routes');
 const ticketRoutes = require('./routes/ticket.routes');
+const carteleraRoutes = require('./routes/cartelera.routes');
 
 // Importar middleware de errores
 const errorHandler = require('./middleware/errorHandler');
@@ -341,6 +344,7 @@ app.use('/bookings', bookingRoutes);
 app.use('/branches', branchRoutes);
 app.use('/seats', seatRoutes);
 app.use('/tickets', ticketRoutes);
+app.use('/cartelera', carteleraRoutes);
 
 // Manejo de errores
 app.use(errorHandler);
