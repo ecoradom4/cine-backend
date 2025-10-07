@@ -1,14 +1,16 @@
-const { Movie, Showtime, Branch } = require('../models');
+const { Movie, Showtime, Branch, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 const getAllMovies = async (req, res, next) => {
   try {
     const { genre, search, branchId, date } = req.query;
     
+    console.log("📥 Filtros recibidos en backend:", { genre, search, branchId, date });
+    
     const whereClause = {};
     const includeClause = [];
     
-    // Filtro por género - BUSQUEDA EXACTA en el array de géneros
+    // Filtro por género
     if (genre && genre !== 'Todos') {
       whereClause.genre = {
         [Op.like]: `%${genre}%`
@@ -28,7 +30,7 @@ const getAllMovies = async (req, res, next) => {
       whereClause.branchId = branchId;
     }
 
-    // Filtro por fecha de función - requiere join con showtimes
+    // Filtro por fecha de función
     if (date) {
       includeClause.push({
         model: Showtime,
@@ -41,14 +43,7 @@ const getAllMovies = async (req, res, next) => {
             ]
           }
         },
-        required: true // INNER JOIN para solo películas con funciones en esa fecha
-      });
-    } else {
-      // Si no hay filtro de fecha, incluir showtimes pero no requerirlos
-      includeClause.push({
-        model: Showtime,
-        as: 'showtimes',
-        required: false
+        required: true
       });
     }
 
@@ -59,18 +54,26 @@ const getAllMovies = async (req, res, next) => {
       attributes: ['id', 'name', 'location']
     });
 
+    console.log("🔍 Consulta Sequelize:", {
+      where: whereClause,
+      include: includeClause
+    });
+
     const movies = await Movie.findAll({
       where: whereClause,
       include: includeClause,
       order: [['releaseDate', 'DESC']],
-      distinct: true // Importante para evitar duplicados con el JOIN de showtimes
+      distinct: true
     });
+
+    console.log("✅ Películas encontradas:", movies.length);
 
     res.json({
       success: true,
       data: movies
     });
   } catch (error) {
+    console.error("❌ Error en getAllMovies:", error);
     next(error);
   }
 };
