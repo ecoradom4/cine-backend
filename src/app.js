@@ -218,9 +218,9 @@ const swaggerOptions = {
   },
   // ACTUALIZADO: Incluir todas las rutas
   apis: [
-    './routes/*.js',
-    './routes/**/*.js',
-    './controllers/*.js'
+    './src/routes/*.js',          
+    './src/routes/**/*.js',        
+    './src/controllers/*.js'   
   ]
 };
 
