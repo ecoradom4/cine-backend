@@ -3,11 +3,12 @@ const { Op } = require('sequelize');
 
 const getAllMovies = async (req, res, next) => {
   try {
-    const { genre, search, branchId } = req.query;
+    const { genre, search, branchId, date } = req.query;
     
     const whereClause = {};
+    const includeClause = [];
     
-    // Filtro por género
+    // Filtro por género - BUSQUEDA EXACTA en el array de géneros
     if (genre && genre !== 'Todos') {
       whereClause.genre = {
         [Op.like]: `%${genre}%`
@@ -27,14 +28,42 @@ const getAllMovies = async (req, res, next) => {
       whereClause.branchId = branchId;
     }
 
+    // Filtro por fecha de función - requiere join con showtimes
+    if (date) {
+      includeClause.push({
+        model: Showtime,
+        as: 'showtimes',
+        where: {
+          startsAt: {
+            [Op.between]: [
+              new Date(`${date}T00:00:00`),
+              new Date(`${date}T23:59:59`)
+            ]
+          }
+        },
+        required: true // INNER JOIN para solo películas con funciones en esa fecha
+      });
+    } else {
+      // Si no hay filtro de fecha, incluir showtimes pero no requerirlos
+      includeClause.push({
+        model: Showtime,
+        as: 'showtimes',
+        required: false
+      });
+    }
+
+    // Siempre incluir la relación con branch
+    includeClause.push({
+      model: Branch,
+      as: 'branch',
+      attributes: ['id', 'name', 'location']
+    });
+
     const movies = await Movie.findAll({
       where: whereClause,
-      include: [{
-        model: Branch,
-        as: 'branch',
-        attributes: ['id', 'name', 'location']
-      }],
-      order: [['releaseDate', 'DESC']]
+      include: includeClause,
+      order: [['releaseDate', 'DESC']],
+      distinct: true // Importante para evitar duplicados con el JOIN de showtimes
     });
 
     res.json({
