@@ -45,6 +45,14 @@ const Movie = sequelize.define('Movie', {
   },
   releaseDate: {
     type: DataTypes.DATE
+  },
+  branchId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'branches',
+      key: 'id'
+    }
   }
 }, {
   tableName: 'movies'

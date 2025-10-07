@@ -39,6 +39,11 @@ const router = express.Router();
  *         releaseDate:
  *           type: string
  *           format: date
+ *         branchId:
+ *           type: string
+ *           format: uuid
+ *         branch:
+ *           $ref: '#/components/schemas/Branch'
  */
 
 /**
@@ -47,6 +52,23 @@ const router = express.Router();
  *   get:
  *     summary: Obtener todas las películas
  *     tags: [Películas]
+ *     parameters:
+ *       - in: query
+ *         name: genre
+ *         schema:
+ *           type: string
+ *         description: Filtrar por género
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Buscar en título y descripción
+ *       - in: query
+ *         name: branchId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filtrar por ID de sucursal
  *     responses:
  *       200:
  *         description: Lista de películas obtenida exitosamente
@@ -114,6 +136,7 @@ router.get('/:id', getMovieById);
  *               - genre
  *               - duration
  *               - price
+ *               - branchId
  *             properties:
  *               title:
  *                 type: string
@@ -132,6 +155,9 @@ router.get('/:id', getMovieById);
  *               releaseDate:
  *                 type: string
  *                 format: date
+ *               branchId:
+ *                 type: string
+ *                 format: uuid
  *     responses:
  *       201:
  *         description: Película creada exitosamente
