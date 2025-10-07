@@ -142,4 +142,25 @@ router.get('/:id', authenticateToken, getBookingById);
  */
 router.delete('/:id', authenticateToken, cancelBooking);
 
+/**
+ * @swagger
+ * /bookings/{id}/send-email:
+ *   post:
+ *     summary: Enviar ticket por email
+ *     tags: [Reservas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Ticket enviado por email exitosamente
+ */
+router.post('/:id/send-email', authenticateToken, sendTicketEmail);
+
 module.exports = router;

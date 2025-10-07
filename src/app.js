@@ -12,6 +12,9 @@ const movieRoutes = require('./routes/movie.routes');
 const roomRoutes = require('./routes/room.routes');
 const showtimeRoutes = require('./routes/showtime.routes');
 const bookingRoutes = require('./routes/booking.routes');
+const branchRoutes = require('./routes/branch.routes');
+const seatRoutes = require('./routes/seat.routes');
+const ticketRoutes = require('./routes/ticket.routes');
 
 // Importar middleware de errores
 const errorHandler = require('./middleware/errorHandler');
@@ -44,7 +47,7 @@ const swaggerOptions = {
     servers: [
       {
         url: process.env.NODE_ENV === 'production' 
-          ? 'https://tu-backend.onrender.com' 
+          ? 'https://cine-backend-tdsu.onrender.com' 
           : `http://localhost:${process.env.PORT || 3001}`,
         description: process.env.NODE_ENV === 'production' ? 'Producción' : 'Desarrollo'
       }
@@ -56,13 +59,43 @@ const swaggerOptions = {
           scheme: 'bearer',
           bearerFormat: 'JWT'
         }
+      },
+      schemas: {
+        Branch: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid'
+            },
+            name: {
+              type: 'string'
+            },
+            address: {
+              type: 'string'
+            },
+            city: {
+              type: 'string'
+            },
+            phone: {
+              type: 'string'
+            },
+            openingHours: {
+              type: 'string'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'inactive']
+            }
+          }
+        }
       }
     },
     security: [{
       bearerAuth: []
     }]
   },
-  apis: ['./src/routes/*.js'] // Ruta donde buscará la documentación en las rutas
+  apis: ['./routes/*.js'] // Ruta donde buscará la documentación en las rutas
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -93,7 +126,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(morgan('combined'));
@@ -133,12 +166,37 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Ruta de inicio
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Bienvenido a la API de Cine Connect',
+    version: '1.0.0',
+    endpoints: {
+      docs: '/api-docs',
+      health: '/health',
+      auth: '/auth',
+      movies: '/movies',
+      rooms: '/rooms',
+      showtimes: '/showtimes',
+      bookings: '/bookings',
+      branches: '/branches',
+      seats: '/seats',
+      tickets: '/tickets'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Rutas de la API
 app.use('/auth', authRoutes);
 app.use('/movies', movieRoutes);
 app.use('/rooms', roomRoutes);
 app.use('/showtimes', showtimeRoutes);
 app.use('/bookings', bookingRoutes);
+app.use('/branches', branchRoutes);
+app.use('/seats', seatRoutes);
+app.use('/tickets', ticketRoutes);
 
 // Manejo de errores
 app.use(errorHandler);

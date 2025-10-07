@@ -155,9 +155,52 @@ const cancelBooking = async (req, res, next) => {
   }
 };
 
+// Agregar estas funciones al booking.controller.js que ya tienes
+
+const sendTicketEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const booking = await Booking.findOne({
+      where: { id, userId },
+      include: [
+        {
+          model: Showtime,
+          as: 'showtime',
+          include: [
+            { model: Movie, as: 'movie' },
+            { model: Room, as: 'room' }
+          ]
+        }
+      ]
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reserva no encontrada'
+      });
+    }
+
+    // Aquí iría la lógica para enviar email
+    // Por ahora simulamos el envío
+    console.log(`Ticket enviado por email para reserva ${booking.ticketNumber}`);
+
+    res.json({
+      success: true,
+      message: 'Ticket enviado por email exitosamente'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Agregar al module.exports
 module.exports = {
   createBooking,
   getUserBookings,
   getBookingById,
-  cancelBooking
+  cancelBooking,
+  sendTicketEmail
 };
