@@ -12,6 +12,60 @@ const router = express.Router();
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Movie:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         title:
+ *           type: string
+ *         genre:
+ *           type: string
+ *         duration:
+ *           type: integer
+ *         rating:
+ *           type: number
+ *         poster:
+ *           type: string
+ *         description:
+ *           type: string
+ *         price:
+ *           type: number
+ *         releaseDate:
+ *           type: string
+ *           format: date-time
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     MovieResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         data:
+ *           $ref: '#/components/schemas/Movie'
+ *     MoviesResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         data:
+ *           type: object
+ *           properties:
+ *             movies:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Movie'
+ */
+
+/**
+ * @swagger
  * /movies:
  *   get:
  *     summary: Obtener todas las películas
@@ -22,14 +76,7 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Movie'
+ *               $ref: '#/components/schemas/MoviesResponse'
  */
 router.get('/', getAllMovies);
 
@@ -53,12 +100,7 @@ router.get('/', getAllMovies);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/Movie'
+ *               $ref: '#/components/schemas/MovieResponse'
  *       404:
  *         description: Película no encontrada
  */
@@ -104,6 +146,10 @@ router.get('/:id', getMovieById);
  *     responses:
  *       201:
  *         description: Película creada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MovieResponse'
  *       401:
  *         description: No autorizado
  *       403:
@@ -135,6 +181,10 @@ router.post('/', authenticateToken, isAdmin, createMovie);
  *     responses:
  *       200:
  *         description: Película actualizada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MovieResponse'
  *       404:
  *         description: Película no encontrada
  */
