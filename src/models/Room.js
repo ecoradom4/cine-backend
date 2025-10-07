@@ -23,11 +23,30 @@ const Room = sequelize.define('Room', {
     defaultValue: 'standard'
   },
   status: {
-    type: DataTypes.STRING,
+    type: DataTypes.ENUM('active', 'maintenance', 'inactive'),
     defaultValue: 'active'
   },
   location: {
     type: DataTypes.STRING
+  },
+  
+  rows: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 10
+  },
+  seatsPerRow: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 12
+  },
+  seatMap: {
+    type: DataTypes.JSONB,
+    defaultValue: {} // Estructura: { "A": { "1": "available", "2": "vip" } }
+  },
+  branchId: {
+    type: DataTypes.UUID,
+    allowNull: false
   }
 }, {
   tableName: 'rooms'

@@ -8,7 +8,7 @@ const Booking = sequelize.define('Booking', {
     primaryKey: true
   },
   seats: {
-    type: DataTypes.JSON,
+    type: DataTypes.ARRAY(DataTypes.STRING), 
     allowNull: false
   },
   totalPrice: {
@@ -19,11 +19,28 @@ const Booking = sequelize.define('Booking', {
     }
   },
   status: {
-    type: DataTypes.ENUM('confirmed', 'cancelled'),
-    defaultValue: 'confirmed'
+    type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'expired'),
+    defaultValue: 'pending'
+  },
+  ticketNumber: {
+    type: DataTypes.STRING,
+    unique: true
+  },
+  qrCode: {
+    type: DataTypes.TEXT // Base64 del QR code
+  },
+  expiresAt: {
+    type: DataTypes.DATE // Para reservas pendientes de pago
   }
 }, {
-  tableName: 'bookings'
+  tableName: 'bookings',
+  hooks: {
+    beforeCreate: async (booking) => {
+      if (!booking.ticketNumber) {
+        booking.ticketNumber = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+    }
+  }
 });
 
 module.exports = Booking;

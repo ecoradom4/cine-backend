@@ -24,6 +24,11 @@ const Showtime = sequelize.define('Showtime', {
     validate: {
       min: 0
     }
+  },
+  // Nuevo campo para el estado actual de asientos
+  occupiedSeats: {
+    type: DataTypes.JSONB,
+    defaultValue: {} // { "A1": "occupied", "B2": "reserved" }
   }
 }, {
   tableName: 'showtimes'
