@@ -33,9 +33,6 @@ SeatReservation.belongsTo(Showtime, { foreignKey: 'showtimeId', as: 'showtime' }
 User.hasMany(SeatReservation, { foreignKey: 'userId', as: 'seatReservations' });
 SeatReservation.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-// Agregar branchId a Movie si quieres filtrar por sucursal
-Movie.belongsTo(Branch, { foreignKey: 'branchId', as: 'branch' });
-
 module.exports = {
   User,
   Movie,
