@@ -83,7 +83,6 @@ router.get('/:id', getMovieById);
  *               - genre
  *               - duration
  *               - price
- *               - branchId
  *             properties:
  *               title:
  *                 type: string
@@ -102,9 +101,6 @@ router.get('/:id', getMovieById);
  *               releaseDate:
  *                 type: string
  *                 format: date
- *               branchId:
- *                 type: string
- *                 format: uuid
  *     responses:
  *       201:
  *         description: Película creada exitosamente
