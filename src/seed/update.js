@@ -137,7 +137,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-12-19'),
         description: "La continuación de la épica saga de Pandora.",
         price: 75.00,
-        branchId: branches[0].id, // Zona 4
         poster: "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400"
       },
       {
@@ -150,7 +149,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-05-02'),
         description: "Los Vengadores se enfrentan a su mayor desafío.",
         price: 80.00,
-        branchId: branches[1].id, // Metronorte
         poster: "https://images.unsplash.com/photo-1635863138275-d9b33299680a?w=400"
       },
       {
@@ -163,7 +161,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-11-26'),
         description: "Judy Hopps y Nick Wilde regresan en una nueva aventura.",
         price: 60.00,
-        branchId: branches[2].id, // Miraflores
         poster: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400"
       },
       {
@@ -176,7 +173,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-10-03'),
         description: "Batman enfrenta nuevos y peligrosos villanos.",
         price: 72.00,
-        branchId: branches[3].id, // Antigua
         poster: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400"
       },
       // Películas adicionales para tener más datos de prueba
@@ -190,7 +186,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-03-15'),
         description: "Miles Morales continúa su viaje a través del multiverso.",
         price: 68.00,
-        branchId: branches[0].id, // Zona 4
         poster: "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400"
       },
       {
@@ -203,7 +198,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-11-10'),
         description: "Elsa y Anna regresan en una nueva aventura mágica.",
         price: 58.00,
-        branchId: branches[1].id, // Metronorte
         poster: "https://images.unsplash.com/photo-1578632749014-ca77efd052eb?w=400"
       },
       {
@@ -216,7 +210,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-09-20'),
         description: "John Wick continúa su lucha contra la Alta Mesa.",
         price: 70.00,
-        branchId: branches[2].id, // Miraflores
         poster: "https://images.unsplash.com/photo-1485095329183-d0797cdc5676?w=400"
       },
       {
@@ -229,7 +222,6 @@ const resetAndSeed = async () => {
         releaseDate: new Date('2025-12-15'),
         description: "La conclusión de la épica adaptación de Dune.",
         price: 78.00,
-        branchId: branches[3].id, // Antigua
         poster: "https://images.unsplash.com/photo-1642618215095-3523a9a36893?w=400"
       }
     ], { ignoreDuplicates: true });
@@ -333,9 +325,8 @@ const resetAndSeed = async () => {
         const branchRooms = createdRooms.filter(r => r.branchId === branch.id);
 
         movies.forEach(movie => {
-          // Solo crear showtimes para películas que pertenecen a esta sucursal
-          if (movie.branchId !== branch.id) return;
-
+          // ❌ QUITAMOS la restricción de branchId en películas
+          // Ahora todas las películas pueden tener showtimes en cualquier sucursal
           const prob = getMovieBranchProbability(movie.id, branch.id);
           if (Math.random() > prob) return;
 

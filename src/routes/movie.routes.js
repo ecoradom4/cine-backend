@@ -12,63 +12,10 @@ const router = express.Router();
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Movie:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         title:
- *           type: string
- *         genre:
- *           type: string
- *         duration:
- *           type: integer
- *         rating:
- *           type: number
- *           format: float
- *         poster:
- *           type: string
- *         description:
- *           type: string
- *         price:
- *           type: number
- *           format: float
- *         releaseDate:
- *           type: string
- *           format: date
- *         branchId:
- *           type: string
- *           format: uuid
- *         branch:
- *           $ref: '#/components/schemas/Branch'
- */
-
-/**
- * @swagger
  * /movies:
  *   get:
  *     summary: Obtener todas las películas
  *     tags: [Películas]
- *     parameters:
- *       - in: query
- *         name: genre
- *         schema:
- *           type: string
- *         description: Filtrar por género
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Buscar en título y descripción
- *       - in: query
- *         name: branchId
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Filtrar por ID de sucursal
  *     responses:
  *       200:
  *         description: Lista de películas obtenida exitosamente
