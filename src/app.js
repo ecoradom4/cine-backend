@@ -71,8 +71,30 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use(helmet());
 app.use(limiter);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: function (origin, callback) {
+    // Lista de orígenes permitidos
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://192.168.1.31:3000',
+      process.env.FRONTEND_URL  // Para producción
+    ].filter(Boolean); // Elimina valores undefined/null
+
+    // En desarrollo, permite todos los orígenes o los específicos
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
+    // En producción, verifica contra la lista
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origen no permitido por CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
