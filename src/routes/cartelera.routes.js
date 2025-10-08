@@ -1,4 +1,3 @@
-// routes/cartelera.routes.js
 const express = require('express');
 const { getCartelera, getShowtimesByMovie } = require('../controllers/cartelera.controller');
 
@@ -8,7 +7,7 @@ const router = express.Router();
  * @swagger
  * /cartelera:
  *   get:
- *     summary: Obtener cartelera con filtros
+ *     summary: Obtener cartelera con filtros avanzados
  *     tags: [Cartelera]
  *     parameters:
  *       - in: query
@@ -33,6 +32,18 @@ const router = express.Router();
  *         schema:
  *           type: string
  *         description: Buscar en título o descripción
+ *       - in: query
+ *         name: roomTypeId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filtrar por tipo de sala
+ *       - in: query
+ *         name: audioType
+ *         schema:
+ *           type: string
+ *           enum: [original, dubbed, subtitled]
+ *         description: Filtrar por tipo de audio
  *     responses:
  *       200:
  *         description: Cartelera obtenida exitosamente
@@ -61,10 +72,28 @@ const router = express.Router();
  *                             type: integer
  *                           poster:
  *                             type: string
+ *                           rating:
+ *                             type: number
  *                           showtimes:
  *                             type: array
  *                             items:
  *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                 startsAt:
+ *                                   type: string
+ *                                   format: date-time
+ *                                 audioType:
+ *                                   type: string
+ *                                 roomType:
+ *                                   type: object
+ *                                 branch:
+ *                                   type: object
+ *                     total:
+ *                       type: integer
+ *                     filters:
+ *                       type: object
  */
 router.get('/', getCartelera);
 
@@ -88,6 +117,11 @@ router.get('/', getCartelera);
  *           format: date
  *       - in: query
  *         name: sucursalId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: roomTypeId
  *         schema:
  *           type: string
  *           format: uuid

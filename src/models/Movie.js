@@ -29,6 +29,7 @@ const Movie = sequelize.define('Movie', {
   },
   poster: {
     type: DataTypes.STRING,
+    allowNull: true,
     validate: {
       isUrl: true
     }
@@ -36,15 +37,12 @@ const Movie = sequelize.define('Movie', {
   description: {
     type: DataTypes.TEXT
   },
-  price: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-    validate: {
-      min: 0
-    }
-  },
   releaseDate: {
     type: DataTypes.DATE
+  },
+  status: {
+    type: DataTypes.ENUM('coming_soon', 'now_playing', 'finished'),
+    defaultValue: 'now_playing'
   }
 }, {
   tableName: 'movies'

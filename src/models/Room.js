@@ -18,10 +18,22 @@ const Room = sequelize.define('Room', {
       min: 1
     }
   },
-  type: {
-    type: DataTypes.STRING,
-    defaultValue: 'standard'
-  },
+  formats: {
+  type: DataTypes.ARRAY(DataTypes.STRING),
+  defaultValue: ['2D'],
+  validate: {
+    isValidFormat(value) {
+      if (value) {
+        const validFormats = ['2D', '3D', 'IMAX', '4DX', 'VIP'];
+        value.forEach(format => {
+          if (!validFormats.includes(format)) {
+            throw new Error(`Formato inválido: ${format}`);
+          }
+        });
+      }
+    }
+  }
+},
   status: {
     type: DataTypes.ENUM('active', 'maintenance', 'inactive'),
     defaultValue: 'active'
@@ -29,7 +41,6 @@ const Room = sequelize.define('Room', {
   location: {
     type: DataTypes.STRING
   },
-  
   rows: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -40,11 +51,17 @@ const Room = sequelize.define('Room', {
     allowNull: false,
     defaultValue: 12
   },
+  // ✅ Mapa de asientos con tipos
   seatMap: {
     type: DataTypes.JSONB,
-    defaultValue: {} // Estructura: { "A": { "1": "available", "2": "vip" } }
+    defaultValue: {} // Estructura: { "A1": { "type": "standard", "price": 10.00 } }
   },
   branchId: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  // ✅ Agregar roomTypeId para la relación
+  roomTypeId: {
     type: DataTypes.UUID,
     allowNull: false
   }

@@ -34,20 +34,9 @@ const generateTicket = async (req, res, next) => {
       });
     }
 
-    // Generar QR code
-    const qrData = JSON.stringify({
-      bookingId: booking.id,
-      ticketNumber: booking.ticketNumber,
-      movie: booking.showtime.movie.title,
-      showtime: booking.showtime.startsAt,
-      seats: booking.seats
-    });
-
-    const qrCode = await QRCode.toDataURL(qrData);
-
-    // Actualizar booking con QR code si no existe
+    // Generar QR si no existe
     if (!booking.qrCode) {
-      await booking.update({ qrCode });
+      await generateQRCodeForBooking(booking);
     }
 
     // Crear PDF
@@ -91,7 +80,7 @@ const generateTicket = async (req, res, next) => {
 
     // Información de asientos y precio
     doc.text(`Asientos: ${booking.seats.join(', ')}`, 50, 235)
-       .text(`Total: $${booking.totalPrice}`, 50, 250);
+       .text(`Total: Q${booking.totalPrice}`, 50, 250);
 
     // Número de ticket
     doc.fontSize(10).fillColor('#999')
@@ -216,6 +205,7 @@ const validateTicket = async (req, res, next) => {
   }
 };
 
+// Endpoint para enviar ticket por email
 const sendTicketEmail = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -246,21 +236,8 @@ const sendTicketEmail = async (req, res, next) => {
       });
     }
 
-    // Generar QR si no existe
-    if (!booking.qrCode) {
-      const qrData = JSON.stringify({
-        bookingId: booking.id,
-        ticketNumber: booking.ticketNumber,
-        movie: booking.showtime.movie.title,
-        showtime: booking.showtime.startsAt,
-        seats: booking.seats
-      });
-      const qrCode = await QRCode.toDataURL(qrData);
-      await booking.update({ qrCode });
-    }
-
-    // Enviar email
-    await sendEmailWithTicket(booking);
+    // Enviar email usando la función REAL
+    await sendRealTicketEmail(booking);
 
     res.json({
       success: true,
@@ -275,9 +252,46 @@ const sendTicketEmail = async (req, res, next) => {
   }
 };
 
-// Función para enviar email con ticket
-async function sendEmailWithTicket(booking) {
+// Función auxiliar para generar QR code
+async function generateQRCodeForBooking(booking) {
+  const qrData = JSON.stringify({
+    bookingId: booking.id,
+    ticketNumber: booking.ticketNumber,
+    movie: booking.showtime.movie.title,
+    showtime: booking.showtime.startsAt,
+    seats: booking.seats
+  });
+  
+  const qrCode = await QRCode.toDataURL(qrData);
+  await booking.update({ qrCode });
+  return qrCode;
+}
+
+// Función REAL para enviar ticket por email (para uso automático en createBooking y endpoint público)
+async function sendRealTicketEmail(booking) {
   try {
+    // Generar QR si no existe
+    if (!booking.qrCode) {
+      await generateQRCodeForBooking(booking);
+      // Recargar el booking para obtener el QR actualizado
+      booking = await Booking.findByPk(booking.id, {
+        include: [
+          {
+            model: Showtime,
+            as: 'showtime',
+            include: [
+              { model: Movie, as: 'movie' },
+              { model: Room, as: 'room' }
+            ]
+          },
+          {
+            model: User,
+            as: 'user'
+          }
+        ]
+      });
+    }
+
     const transporter = createTransporter();
     
     const showtimeDate = new Date(booking.showtime.startsAt);
@@ -310,7 +324,7 @@ async function sendEmailWithTicket(booking) {
             <p><strong>Hora:</strong> ${showtimeDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
             <p><strong>Sala:</strong> ${booking.showtime.room.name}</p>
             <p><strong>Asientos:</strong> ${booking.seats.join(', ')}</p>
-            <p><strong>Total:</strong> $${booking.totalPrice}</p>
+            <p><strong>Total:</strong> Q${booking.totalPrice}</p>
           </div>
           
           <div class="qr-code">
@@ -346,14 +360,18 @@ async function sendEmailWithTicket(booking) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email enviado exitosamente a: ${booking.user.email}`);
+    console.log(`✅ TICKET enviado exitosamente a: ${booking.user.email}`);
+    console.log(`🎬 Película: ${booking.showtime.movie.title}`);
+    console.log(`🎫 Asientos: ${booking.seats.join(', ')}`);
+    
+    return true;
   } catch (error) {
-    console.error('Error en sendEmailWithTicket:', error);
+    console.error('❌ Error en sendRealTicketEmail:', error);
     throw error;
   }
 }
 
-// Función para generar PDF en buffer (CORREGIDA)
+// Función para generar PDF en buffer
 async function generatePDFBuffer(booking) {
   return new Promise((resolve, reject) => {
     try {
@@ -367,7 +385,7 @@ async function generatePDFBuffer(booking) {
       });
       doc.on('error', reject);
 
-      // Contenido del PDF (mismo que generateTicket)
+      // Contenido del PDF
       doc.fontSize(20).font('Helvetica-Bold')
          .fillColor('#2c5aa0')
          .text('CINE CONNECT', 50, 50, { align: 'center' });
@@ -393,7 +411,7 @@ async function generatePDFBuffer(booking) {
          .text(`Sala: ${booking.showtime.room.name}`, 50, 210);
 
       doc.text(`Asientos: ${booking.seats.join(', ')}`, 50, 235)
-         .text(`Total: $${booking.totalPrice}`, 50, 250);
+         .text(`Total: Q${booking.totalPrice}`, 50, 250);
 
       doc.fontSize(10).fillColor('#999')
          .text(`Ticket: ${booking.ticketNumber}`, 50, 275);
@@ -422,5 +440,6 @@ module.exports = {
   generateTicket,
   getQRCode,
   validateTicket,
-  sendTicketEmail
+  sendTicketEmail,
+  sendRealTicketEmail // ✅ Exportar para usar en booking.controller
 };

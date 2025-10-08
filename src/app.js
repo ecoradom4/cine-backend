@@ -5,9 +5,8 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const fs = require('fs');
 const path = require('path');
-
-
 
 // Importar rutas
 const authRoutes = require('./routes/auth.routes');
@@ -19,6 +18,10 @@ const branchRoutes = require('./routes/branch.routes');
 const seatRoutes = require('./routes/seat.routes');
 const ticketRoutes = require('./routes/ticket.routes');
 const carteleraRoutes = require('./routes/cartelera.routes');
+const pricingRoutes = require('./routes/pricing.routes');
+const promotionRoutes = require('./routes/promotion.routes');
+const invoiceRoutes = require('./routes/invoice.routes');
+const scheduleRoutes = require('./routes/schedule.routes');
 
 // Importar middleware de errores
 const errorHandler = require('./middleware/errorHandler');
@@ -35,29 +38,23 @@ const limiter = rateLimit({
   }
 });
 
-// Configuración de Swagger ACTUALIZADA
+// CONFIGURACIÓN SWAGGER COMPLETA
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
       title: 'API Sistema de Cine - Cine Connect',
-      version: '1.0.0',
+      version: '2.0.0',
       description: 'Documentación completa de la API para el sistema de gestión de cine',
       contact: {
-        name: 'Soporte API Cine Connect',
+        name: 'Soporte API',
         email: 'soporte@cineconnect.com'
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
       }
     },
     servers: [
       {
-        url: process.env.NODE_ENV === 'production' 
-          ? 'https://cine-backend-tdsu.onrender.com' 
-          : `http://localhost:${process.env.PORT || 3001}`,
-        description: process.env.NODE_ENV === 'production' ? 'Producción' : 'Desarrollo'
+        url: `http://localhost:${process.env.PORT || 3001}`,
+        description: 'Servidor local'
       }
     ],
     components: {
@@ -65,169 +62,66 @@ const swaggerOptions = {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Introduce el token JWT con el formato: Bearer {token}'
-        }
-      },
-      schemas: {
-        Branch: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              format: 'uuid',
-              description: 'ID único de la sucursal'
-            },
-            name: {
-              type: 'string',
-              description: 'Nombre de la sucursal'
-            },
-            address: {
-              type: 'string',
-              description: 'Dirección completa'
-            },
-            city: {
-              type: 'string',
-              description: 'Ciudad donde se encuentra'
-            },
-            phone: {
-              type: 'string',
-              description: 'Teléfono de contacto'
-            },
-            openingHours: {
-              type: 'string',
-              description: 'Horario de atención'
-            },
-            status: {
-              type: 'string',
-              enum: ['active', 'inactive'],
-              description: 'Estado de la sucursal'
-            }
-          }
-        },
-        Booking: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              format: 'uuid'
-            },
-            seats: {
-              type: 'array',
-              items: {
-                type: 'string'
-              },
-              description: 'Asientos reservados'
-            },
-            totalPrice: {
-              type: 'number',
-              description: 'Precio total de la reserva'
-            },
-            status: {
-              type: 'string',
-              enum: ['pending', 'confirmed', 'cancelled', 'expired']
-            },
-            ticketNumber: {
-              type: 'string',
-              description: 'Número único del ticket'
-            }
-          }
-        }
-      },
-      responses: {
-        UnauthorizedError: {
-          description: 'Token de acceso no válido o faltante',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  success: {
-                    type: 'boolean',
-                    example: false
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Token no válido o expirado'
-                  }
-                }
-              }
-            }
-          }
-        },
-        NotFoundError: {
-          description: 'Recurso no encontrado',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  success: {
-                    type: 'boolean',
-                    example: false
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Recurso no encontrado'
-                  }
-                }
-              }
-            }
-          }
+          bearerFormat: 'JWT'
         }
       }
     },
+    // TAGS EXPLÍCITOS - ESTO ES CLAVE
     tags: [
-      {
-        name: 'Autenticación',
-        description: 'Endpoints para registro, login y gestión de usuarios'
-      },
-      {
-        name: 'Películas',
-        description: 'Gestión del catálogo de películas'
-      },
-      {
-        name: 'Salas',
-        description: 'Gestión de salas de cine'
-      },
-      {
-        name: 'Funciones',
-        description: 'Gestión de horarios y funciones'
-      },
-      {
-        name: 'Reservas',
-        description: 'Sistema de reservas y bookings'
-      },
-      {
-        name: 'Sucursales',
-        description: 'Gestión de sucursales del cine'
-      },
-      {
-        name: 'Asientos',
-        description: 'Sistema de selección y reserva de asientos'
-      },
-      {
-        name: 'Tickets',
-        description: 'Generación y gestión de tickets con QR'
-      },
-      {
-        name: 'Health',
-        description: 'Verificación del estado del servidor'
-      }
-    ],
-    security: [{
-      bearerAuth: []
-    }]
+      { name: 'Autenticación', description: 'Registro, login y gestión de usuarios' },
+      { name: 'Películas', description: 'Gestión del catálogo de películas' },
+      { name: 'Salas', description: 'Gestión de salas de cine' },
+      { name: 'Funciones', description: 'Gestión de horarios y funciones' },
+      { name: 'Reservas', description: 'Sistema de reservas y bookings' },
+      { name: 'Sucursales', description: 'Gestión de sucursales del cine' },
+      { name: 'Asientos', description: 'Sistema de selección y reserva de asientos' },
+      { name: 'Tickets', description: 'Generación y gestión de tickets' },
+      { name: 'Cartelera', description: 'Consulta de películas y funciones' },
+      { name: 'Precios', description: 'Sistema de precios dinámicos' },
+      { name: 'Promociones', description: 'Gestión de promociones y descuentos' },
+      { name: 'Facturas', description: 'Sistema de facturación' },
+      { name: 'Programación', description: 'Programación en lote de funciones' },
+    ]
   },
-  // ACTUALIZADO: Incluir todas las rutas
-  apis: [
-    './src/routes/*.js',          
-    './src/routes/**/*.js',        
-    './src/controllers/*.js'   
-  ]
+  apis: [path.join(__dirname, 'routes', '*.js')]
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
+// Función de debug mejorada
+function debugSwaggerSpec() {
+  try {
+    const spec = swaggerJsdoc(swaggerOptions);
+    
+    console.log('🎯 Swagger Debug:');
+    console.log(`📊 Endpoints detectados: ${Object.keys(spec.paths || {}).length}`);
+    console.log(`🏷️  Tags configurados: ${(spec.tags || []).length}`);
+    
+    // Mostrar endpoints por tag
+    if (spec.paths) {
+      const endpointsByTag = {};
+      Object.entries(spec.paths).forEach(([path, methods]) => {
+        Object.entries(methods).forEach(([method, definition]) => {
+          const tags = definition.tags || ['default'];
+          tags.forEach(tag => {
+            if (!endpointsByTag[tag]) endpointsByTag[tag] = [];
+            endpointsByTag[tag].push(`${method.toUpperCase()} ${path}`);
+          });
+        });
+      });
+      
+      console.log('📋 Endpoints por tag:');
+      Object.entries(endpointsByTag).forEach(([tag, endpoints]) => {
+        console.log(`   ${tag}: ${endpoints.length} endpoints`);
+      });
+    }
+    
+    return spec;
+  } catch (error) {
+    console.error('❌ Error generando Swagger spec:', error);
+    return { paths: {}, components: {} };
+  }
+}
+
+const swaggerSpec = debugSwaggerSpec();
 
 // Middlewares
 app.use(helmet());
@@ -255,83 +149,71 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Servir documentación Swagger con opciones mejoradas
+// SWAGGER UI CON CONFIGURACIÓN MEJORADA
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
-  customCss: `
-    .swagger-ui .topbar { display: none; }
-    .swagger-ui .info h2 { color: #2c5aa0; }
-    .swagger-ui .btn.authorize { background-color: #2c5aa0; }
-    .swagger-ui .scheme-container { background-color: #f5f5f5; }
-  `,
-  customSiteTitle: "Cine Connect API Docs",
+  customSiteTitle: "Cine Connect API - Documentación Completa",
   swaggerOptions: {
     persistAuthorization: true,
     displayRequestDuration: true,
     filter: true,
-    showExtensions: true,
-    showCommonExtensions: true
+    showExtensions: true
   }
 }));
 
 // Ruta de health check
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: Verificar estado del servidor
- *     tags: [Health]
- *     responses:
- *       200:
- *         description: Servidor funcionando correctamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Servidor del cine funcionando correctamente
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- */
 app.get('/health', (req, res) => {
   res.json({ 
     success: true, 
-    message: 'Servidor del cine funcionando correctamente',
+    message: 'Servidor funcionando correctamente',
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    endpoints: Object.keys(swaggerSpec.paths || {}).length
   });
 });
 
-// Ruta de inicio con documentación de endpoints
+// Ruta de diagnóstico Swagger
+app.get('/swagger-info', (req, res) => {
+  const endpointsByTag = {};
+  
+  if (swaggerSpec.paths) {
+    Object.entries(swaggerSpec.paths).forEach(([path, methods]) => {
+      Object.entries(methods).forEach(([method, definition]) => {
+        const tags = definition.tags || ['Sin etiqueta'];
+        tags.forEach(tag => {
+          if (!endpointsByTag[tag]) endpointsByTag[tag] = [];
+          endpointsByTag[tag].push({
+            method: method.toUpperCase(),
+            path: path,
+            summary: definition.summary || 'Sin descripción'
+          });
+        });
+      });
+    });
+  }
+
+  res.json({
+    success: true,
+    totalEndpoints: Object.keys(swaggerSpec.paths || {}).length,
+    totalTags: (swaggerSpec.tags || []).length,
+    endpointsByTag: endpointsByTag,
+    allPaths: Object.keys(swaggerSpec.paths || {})
+  });
+});
+
+// Ruta de inicio
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Bienvenido a la API de Cine Connect',
-    version: '1.0.0',
+    message: '🚀 API Cine Connect v2.0 - Funcionando correctamente',
     documentation: '/api-docs',
-    endpoints: {
-      auth: '/auth',
-      movies: '/movies',
-      rooms: '/rooms', 
-      showtimes: '/showtimes',
-      bookings: '/bookings',
-      branches: '/branches',
-      seats: '/seats',
-      tickets: '/tickets',
-      health: '/health'
-    },
-    timestamp: new Date().toISOString()
+    health: '/health',
+    swaggerInfo: '/swagger-info',
+    totalEndpoints: Object.keys(swaggerSpec.paths || {}).length
   });
 });
 
@@ -345,6 +227,10 @@ app.use('/branches', branchRoutes);
 app.use('/seats', seatRoutes);
 app.use('/tickets', ticketRoutes);
 app.use('/cartelera', carteleraRoutes);
+app.use('/pricing', pricingRoutes);
+app.use('/promotions', promotionRoutes);
+app.use('/invoices', invoiceRoutes);
+app.use('/schedule', scheduleRoutes);
 
 // Manejo de errores
 app.use(errorHandler);
@@ -354,16 +240,12 @@ app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
     message: 'Ruta no encontrada',
-    availableEndpoints: {
-      docs: '/api-docs',
-      health: '/health',
-      auth: '/auth',
-      movies: '/movies',
-      bookings: '/bookings',
-      branches: '/branches', 
-      seats: '/seats',
-      tickets: '/tickets'
-    }
+    documentation: '/api-docs',
+    availableRoutes: [
+      '/auth', '/movies', '/rooms', '/showtimes', '/bookings',
+      '/branches', '/seats', '/tickets', '/cartelera', '/pricing',
+      '/promotions', '/invoices', '/schedule', '/health', '/api-docs'
+    ]
   });
 });
 

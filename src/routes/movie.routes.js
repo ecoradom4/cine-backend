@@ -4,7 +4,10 @@ const {
   getMovieById,
   createMovie,
   updateMovie,
-  deleteMovie
+  deleteMovie,
+  getMovieShowtimes,
+  searchMoviePoster,
+  updateMoviePoster
 } = require('../controllers/movie.controller');
 const { authenticateToken, isAdmin } = require('../middleware/auth.middleware');
 
@@ -32,51 +35,82 @@ const router = express.Router();
  *           type: string
  *         description:
  *           type: string
- *         price:
- *           type: number
  *         releaseDate:
  *           type: string
  *           format: date-time
+ *         status:
+ *           type: string
+ *           enum: [coming_soon, now_playing, finished]
+ *         audioTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [original, dubbed, subtitled]
+ *         formats:
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [2D, 3D, IMAX, 4DX]
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
- *     MovieResponse:
- *       type: object
- *       properties:
- *         success:
- *           type: boolean
- *         data:
- *           $ref: '#/components/schemas/Movie'
- *     MoviesResponse:
- *       type: object
- *       properties:
- *         success:
- *           type: boolean
- *         data:
- *           type: object
- *           properties:
- *             movies:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Movie'
  */
 
 /**
  * @swagger
  * /movies:
  *   get:
- *     summary: Obtener todas las películas
+ *     summary: Obtener todas las películas con filtros
  *     tags: [Películas]
+ *     parameters:
+ *       - in: query
+ *         name: genre
+ *         schema:
+ *           type: string
+ *         description: Filtrar por género
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Buscar en título o descripción
+ *       - in: query
+ *         name: branchId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filtrar por sucursal (a través de funciones)
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filtrar por fecha de función
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [coming_soon, now_playing, finished]
+ *         description: Filtrar por estado
  *     responses:
  *       200:
  *         description: Lista de películas obtenida exitosamente
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/MoviesResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     movies:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Movie'
  */
 router.get('/', getAllMovies);
 
@@ -84,7 +118,7 @@ router.get('/', getAllMovies);
  * @swagger
  * /movies/{id}:
  *   get:
- *     summary: Obtener una película por ID
+ *     summary: Obtener una película por ID con sus funciones
  *     tags: [Películas]
  *     parameters:
  *       - in: path
@@ -100,11 +134,51 @@ router.get('/', getAllMovies);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/MovieResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     movie:
+ *                       $ref: '#/components/schemas/Movie'
  *       404:
  *         description: Película no encontrada
  */
 router.get('/:id', getMovieById);
+
+/**
+ * @swagger
+ * /movies/{id}/showtimes:
+ *   get:
+ *     summary: Obtener funciones de una película específica
+ *     tags: [Películas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID de la película
+ *       - in: query
+ *         name: branchId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filtrar por sucursal
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filtrar por fecha
+ *     responses:
+ *       200:
+ *         description: Funciones obtenidas exitosamente
+ */
+router.get('/:id/showtimes', getMovieShowtimes);
 
 /**
  * @swagger
@@ -124,7 +198,6 @@ router.get('/:id', getMovieById);
  *               - title
  *               - genre
  *               - duration
- *               - price
  *             properties:
  *               title:
  *                 type: string
@@ -138,18 +211,28 @@ router.get('/:id', getMovieById);
  *                 type: string
  *               description:
  *                 type: string
- *               price:
- *                 type: number
  *               releaseDate:
  *                 type: string
  *                 format: date
+ *               status:
+ *                 type: string
+ *                 enum: [coming_soon, now_playing, finished]
+ *                 default: now_playing
+ *               audioTypes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [original, dubbed, subtitled]
+ *                 default: [original]
+ *               formats:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [2D, 3D, IMAX, 4DX]
+ *                 default: [2D]
  *     responses:
  *       201:
  *         description: Película creada exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/MovieResponse'
  *       401:
  *         description: No autorizado
  *       403:
@@ -181,10 +264,6 @@ router.post('/', authenticateToken, isAdmin, createMovie);
  *     responses:
  *       200:
  *         description: Película actualizada exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/MovieResponse'
  *       404:
  *         description: Película no encontrada
  */
@@ -210,7 +289,55 @@ router.put('/:id', authenticateToken, isAdmin, updateMovie);
  *         description: Película eliminada exitosamente
  *       404:
  *         description: Película no encontrada
+ *       400:
+ *         description: No se puede eliminar la película porque tiene funciones con reservas activas
  */
 router.delete('/:id', authenticateToken, isAdmin, deleteMovie);
+
+/**
+ * @swagger
+ * /movies/{id}/poster:
+ *   patch:
+ *     summary: Actualizar el póster de una película usando OMDb (Solo admin)
+ *     tags: [Películas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID de la película
+ *     responses:
+ *       200:
+ *         description: Póster actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     oldPoster:
+ *                       type: string
+ *                     newPoster:
+ *                       type: string
+ *                     movie:
+ *                       $ref: '#/components/schemas/Movie'
+ *       404:
+ *         description: Película no encontrada o no se pudo encontrar póster
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Se requieren privilegios de admin
+ */
+router.patch('/:id/poster', authenticateToken, isAdmin, updateMoviePoster); // ← Agregar esta línea
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const { Showtime, SeatReservation, Booking, Room, Movie } = require('../models');
-const { Op } = require('sequelize'); // ¡Falta esta importación!
+const { Op } = require('sequelize'); 
 
 // Obtener mapa de asientos de una función
 const getShowtimeSeats = async (req, res, next) => {
@@ -9,11 +9,11 @@ const getShowtimeSeats = async (req, res, next) => {
     const showtime = await Showtime.findByPk(id, {
       include: [
         {
-          model: Room, // Cambié 'room' por Room
+          model: Room, 
           as: 'room'
         },
         {
-          model: Movie, // Cambié 'movie' por Movie
+          model: Movie, 
           as: 'movie'
         }
       ]
